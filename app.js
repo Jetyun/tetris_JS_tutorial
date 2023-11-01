@@ -5,6 +5,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const scoreDisplay = document.getElementById("score");
   const startBtn = document.getElementById("start-btn");
   let width = 10;
+  let timerId;
+  let score=0
 
   //each tetris piece shape
   const Lpiece = [
@@ -21,12 +23,12 @@ document.addEventListener("DOMContentLoaded", () => {
     [width + 1, width + 2, width * 2, width * 2 + 1],
   ];
 
-  const Tpiece=[
-    [1, width, width+1, width+2],
-    [1, width+1, width+2, width*2+1],
-    [width, width+1, width+2, width*2+1],
-    [1, width, width+1, width*2+1]
-  ]
+  const Tpiece = [
+    [1, width, width + 1, width + 2],
+    [1, width + 1, width + 2, width * 2 + 1],
+    [width, width + 1, width + 2, width * 2 + 1],
+    [1, width, width + 1, width * 2 + 1],
+  ];
   const Opiece = [
     [0, 1, width, width + 1],
     [0, 1, width, width + 1],
@@ -40,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
     [width, width + 1, width + 2, width + 3],
   ];
 
-  let pieces = [Lpiece, Zpiece, Opiece, Ipiece, Tpiece];
+  let pieces = [Lpiece, Zpiece, Tpiece, Opiece, Ipiece];
 
   let currentPosition = 4;
 
@@ -51,19 +53,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function draw() {
     puzzle.forEach((index) => {
       squares[currentPosition + index].classList.add("piece");
-
     });
   }
-  function nextdraw(){
-    width=4
 
-    
-    puzzle.forEach((index) => {
-      miniSquares[index].classList.add("piece");
-
-    });
-    console.log(puzzle)
-  }
   function undraw() {
     puzzle.forEach((index) => {
       squares[currentPosition + index].classList.remove("piece");
@@ -71,9 +63,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   draw();
-  randomPuzzle = Math.floor(Math.random() * pieces.length)
-  randomOrder = Math.floor(Math.random() * 4)
-  nextdraw();
+  randomPuzzle = Math.floor(Math.random() * pieces.length);
+  randomOrder = Math.floor(Math.random() * 4);
 
   function freeze() {
     if (
@@ -84,12 +75,18 @@ document.addEventListener("DOMContentLoaded", () => {
       puzzle.forEach((index) =>
         squares[currentPosition + index].classList.add("taken")
       );
+
       //start a new piece falling, need to insert randomPuzzle, randomOrder and puzzle again so the variable will activate again and randomize the piece
-      // randomPuzzle = Math.floor(Math.random() * pieces.length)
-      // randomOrder = Math.floor(Math.random() * 4)
-      puzzle = pieces[randomPuzzle][randomOrder]
+      randomPuzzle = nextRandomPuzzle;
+      randomOrder = nextRandomOrder;
+      nextRandomPuzzle = Math.floor(Math.random() * pieces.length);
+      nextRandomOrder = Math.floor(Math.random() * 4);
+      puzzle = pieces[randomPuzzle][randomOrder];
+
       currentPosition = 4;
       draw();
+      displayNext();
+      addScore()
     }
   }
 
@@ -100,42 +97,74 @@ document.addEventListener("DOMContentLoaded", () => {
     freeze();
   }
 
-
-
-  timerId = setInterval(moveDown, 1000);
-
-
-
-
-
-
-  // startBtn.addEventListener("click", () => {});
+  startBtn.addEventListener("click", () => {
+    if (timerId) {
+      clearInterval(timerId);
+      timerId = null;
+    } else {
+      draw();
+      timerId = setInterval(moveDown, 1000);
+      
+      if (
+        foreseeSquares.every((square) => {
+          !square.classList.contains("piece");
+        })
+      ) {
+        console.log('new prediction')
+        nextRandomPuzzle = Math.floor(Math.random() * pieces.length);
+        nextRandomOrder = Math.floor(Math.random() * 4);
+        displayNext();
+      }else{
+        console.log("existed prediction")
+      }
+    }
+  });
 
   document.addEventListener("keydown", function (event) {
     if (event.key === "ArrowLeft") {
-      const isAtLeftEdge = puzzle.some(index=>(currentPosition+index)%width===0) 
+      const isAtLeftEdge = puzzle.some(
+        (index) => (currentPosition + index) % width === 0
+      );
 
       undraw();
       //the line below shows that the piece only move if the puzzle is not at the left edge, if the puzzle is at left edge, the current position stayed constant (but the code didn't state it explicitly)
-      if(!isAtLeftEdge){currentPosition-=1}
-      if(puzzle.some(index=>squares[currentPosition+index].classList.contains('taken'))){currentPosition+=1}
+      if (!isAtLeftEdge) {
+        currentPosition -= 1;
+      }
+      if (
+        puzzle.some((index) =>
+          squares[currentPosition + index].classList.contains("taken")
+        )
+      ) {
+        currentPosition += 1;
+      }
+
+      draw();
+    } else if (event.key === "ArrowUp") {
+      if (randomOrder >= 3) {
+        randomOrder = -1;
+      }
+      undraw();
+      randomOrder += 1;
+      puzzle = pieces[randomPuzzle][randomOrder];
 
       draw();
     }
-    else if(event.key==="ArrowUp"){
-      if(randomOrder>=3){
-        randomOrder=-1 
-    }
-    undraw()
-    randomOrder+=1
-    puzzle = pieces[randomPuzzle][randomOrder]
-    draw()
-    }
     if (event.key === "ArrowRight") {
-      const isAtRightEdge = puzzle.some(index=>(currentPosition+index)%width===9) 
+      const isAtRightEdge = puzzle.some(
+        (index) => (currentPosition + index) % width === 9
+      );
       undraw();
-      if(!isAtRightEdge){currentPosition+=1}
-      if(puzzle.some(index=>squares[currentPosition+index].classList.contains('taken'))){currentPosition-=1}
+      if (!isAtRightEdge) {
+        currentPosition += 1;
+      }
+      if (
+        puzzle.some((index) =>
+          squares[currentPosition + index].classList.contains("taken")
+        )
+      ) {
+        currentPosition -= 1;
+      }
 
       draw();
     }
@@ -148,25 +177,91 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  const foreseeSquares = Array.from(
+    document.querySelectorAll("#foresee-box div")
+  );
+  const miniWidth = 4;
+  let displayIndex = 0;
+  let nextRandomPuzzle = 0;
+  let nextRandomOrder = 0;
 
-const miniSquares = Array.from(document.querySelectorAll("#mini-flexBox div"));
-const miniWidth=4
-let displayIndex=0
-const nextPiece=[
-  [1, width + 1, width * 2 + 1, 2], //Lpiece
-  [0, width, width + 1, width * 2 + 1], //Zpiece
-  [1, width, width+1, width+2] //Tpiece
-  [0, 1, width, width + 1], //Opiece
-  [1, width + 1, width * 2 + 1, width * 3 + 1] //Ipiece
-]
+  //each tetris piece shape shown in the prediction
+  const nextLpiece = [
+    [1, miniWidth + 1, miniWidth * 2 + 1, 2],
+    [miniWidth, miniWidth + 1, miniWidth + 2, miniWidth * 2 + 2],
+    [1, miniWidth + 1, miniWidth * 2 + 1, miniWidth * 2],
+    [miniWidth, miniWidth * 2, miniWidth * 2 + 1, miniWidth * 2 + 2],
+  ];
 
-function displayNext(){
-  miniSquares.forEach(squares=>{
-    squares.classList.remove('piece')
-  })
-  nextPiece()
+  const nextZpiece = [
+    [0, miniWidth, miniWidth + 1, miniWidth * 2 + 1],
+    [miniWidth + 1, miniWidth + 2, miniWidth * 2, miniWidth * 2 + 1],
+    [0, miniWidth, miniWidth + 1, miniWidth * 2 + 1],
+    [miniWidth + 1, miniWidth + 2, miniWidth * 2, miniWidth * 2 + 1],
+  ];
+
+  const nextTpiece = [
+    [1, miniWidth, miniWidth + 1, miniWidth + 2],
+    [1, miniWidth + 1, miniWidth + 2, miniWidth * 2 + 1],
+    [miniWidth, miniWidth + 1, miniWidth + 2, miniWidth * 2 + 1],
+    [1, miniWidth, miniWidth + 1, miniWidth * 2 + 1],
+  ];
+  const nextOpiece = [
+    [0, 1, miniWidth, miniWidth + 1],
+    [0, 1, miniWidth, miniWidth + 1],
+    [0, 1, miniWidth, miniWidth + 1],
+    [0, 1, miniWidth, miniWidth + 1],
+  ];
+  const nextIpiece = [
+    [1, miniWidth + 1, miniWidth * 2 + 1, miniWidth * 3 + 1],
+    [miniWidth, miniWidth + 1, miniWidth + 2, miniWidth + 3],
+    [1, miniWidth + 1, miniWidth * 2 + 1, miniWidth * 3 + 1],
+    [miniWidth, miniWidth + 1, miniWidth + 2, miniWidth + 3],
+  ];
+
+  let nextPieces = [nextLpiece, nextZpiece, nextTpiece, nextOpiece, nextIpiece];
+  let nextPuzzle = nextPieces[nextRandomPuzzle][nextRandomOrder];
+  function displayNext() {
+    //remove any square with the piece class
+    foreseeSquares.forEach((square) => {
+      square.classList.remove("piece");
+    });
+    nextPuzzle = nextPieces[nextRandomPuzzle][nextRandomOrder];
+    
+    nextPuzzle.forEach((index) => {
+      foreseeSquares[displayIndex + index].classList.add("piece");
+    });
+  }
+
+function addScore(){
+  for(let i=0; i<199; i+=width){
+    const row=[i, i+1, i+2, i+3, i+4, i+5, i+6, i+7, i+8, i+9]
+
+    if(row.every(index=>squares[index].classList.contains('taken'))){
+      score+=10
+      scoreDisplay.innerHTML=score
+      row.forEacha(index=>{
+
+        squares[index].classList.remove('taken')
+      })
+const squaresRemoved= squares.splice(i, width)
+squares =squaresRemoved.concat(squares)
+    }
+  }
+
+
 
 }
+
+
+
+
+
+
+
+
+
+
 
 
 

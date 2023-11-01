@@ -23,7 +23,7 @@ body{
     
 }
 
-#flexBox div, #mini-flexBox div{
+#flexBox div, #foresee-box div{
     height: 20px;
     width: 20px;
 
@@ -39,7 +39,7 @@ background-color: blue;
     background-color: green;
 } */
 
-#mini-flexBox{
+#foresee-box{
     margin-left: 20px;
     display: flex;
     width: 80px;
