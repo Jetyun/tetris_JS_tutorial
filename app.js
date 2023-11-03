@@ -1,13 +1,22 @@
 document.addEventListener("DOMContentLoaded", () => {
   const flexBox = document.getElementById("flexBox");
-  const squares = Array.from(document.querySelectorAll("#flexBox div"));
+  let squares = Array.from(document.querySelectorAll("#flexBox div"));
 
   const scoreDisplay = document.getElementById("score");
   const startBtn = document.getElementById("start-btn");
   let width = 10;
   let timerId;
-  let score=0
+  let score = 0;
+const colors=[
 
+'orange',
+'red',
+'purple',
+'green',
+'blue'
+
+
+]
   //each tetris piece shape
   const Lpiece = [
     [1, width + 1, width * 2 + 1, 2],
@@ -53,18 +62,21 @@ document.addEventListener("DOMContentLoaded", () => {
   function draw() {
     puzzle.forEach((index) => {
       squares[currentPosition + index].classList.add("piece");
+      squares[currentPosition+index].style.backgroundColor=colors[randomPuzzle]
     });
   }
 
   function undraw() {
     puzzle.forEach((index) => {
       squares[currentPosition + index].classList.remove("piece");
+      squares[currentPosition+index].style.backgroundColor=''
+
     });
   }
 
-  draw();
-  randomPuzzle = Math.floor(Math.random() * pieces.length);
-  randomOrder = Math.floor(Math.random() * 4);
+  // draw();
+  // randomPuzzle = Math.floor(Math.random() * pieces.length);
+  // randomOrder = Math.floor(Math.random() * 4);
 
   function freeze() {
     if (
@@ -86,7 +98,8 @@ document.addEventListener("DOMContentLoaded", () => {
       currentPosition = 4;
       draw();
       displayNext();
-      addScore()
+      addScore();
+      gameOver();
     }
   }
 
@@ -104,24 +117,26 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       draw();
       timerId = setInterval(moveDown, 1000);
-      
+      ;
+
       if (
-        foreseeSquares.every((square) => {
-          !square.classList.contains("piece");
+        foreseeSquares.some((square) => {
+         return square.classList.contains("piece");
         })
-      ) {
-        console.log('new prediction')
+      ) {}else{
         nextRandomPuzzle = Math.floor(Math.random() * pieces.length);
         nextRandomOrder = Math.floor(Math.random() * 4);
-        displayNext();
-      }else{
-        console.log("existed prediction")
-      }
+        displayNext()
+      } 
+
     }
   });
 
   document.addEventListener("keydown", function (event) {
-    if (event.key === "ArrowLeft") {
+    if (event.key ===' '){
+      console.log('fay')
+    }
+    else if (event.key === "ArrowLeft") {
       const isAtLeftEdge = puzzle.some(
         (index) => (currentPosition + index) % width === 0
       );
@@ -225,45 +240,53 @@ document.addEventListener("DOMContentLoaded", () => {
     //remove any square with the piece class
     foreseeSquares.forEach((square) => {
       square.classList.remove("piece");
+      square.style.backgroundColor=''
     });
     nextPuzzle = nextPieces[nextRandomPuzzle][nextRandomOrder];
-    
+
     nextPuzzle.forEach((index) => {
       foreseeSquares[displayIndex + index].classList.add("piece");
+      foreseeSquares[displayIndex+index].style.backgroundColor=colors[nextRandomPuzzle]
     });
   }
 
-function addScore(){
-  for(let i=0; i<199; i+=width){
-    const row=[i, i+1, i+2, i+3, i+4, i+5, i+6, i+7, i+8, i+9]
+  function addScore() {
+    for (let i = 0; i < 199; i += width) {
+      const row = [
+        i,
+        i + 1,
+        i + 2,
+        i + 3,
+        i + 4,
+        i + 5,
+        i + 6,
+        i + 7,
+        i + 8,
+        i + 9,
+      ];
 
-    if(row.every(index=>squares[index].classList.contains('taken'))){
-      score+=10
-      scoreDisplay.innerHTML=score
-      row.forEacha(index=>{
-
-        squares[index].classList.remove('taken')
-      })
-const squaresRemoved= squares.splice(i, width)
-squares =squaresRemoved.concat(squares)
+      if (row.every((index) => squares[index].classList.contains("taken"))) {
+        score += 10;
+        scoreDisplay.innerHTML = score;
+        row.forEach((index) => {
+          squares[index].classList.remove("taken");
+          squares[index].classList.remove("piece");
+        });
+        const squaresRemoved = squares.splice(i, width);
+        squares = squaresRemoved.concat(squares);
+        squares.forEach((cell) => flexBox.appendChild(cell));
+      }
     }
   }
 
-
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  function gameOver() {
+    if (
+      puzzle.some((index) =>
+        squares[currentPosition + index].classList.contains("taken")
+      )
+    ) {
+      scoreDisplay.innerHTML = "END";
+      clearInterval(timerId);
+    }
+  }
 });

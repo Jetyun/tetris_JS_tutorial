@@ -16,7 +16,7 @@ body{
 #flexBox{
     width: 200px;
     height: 400px;
-    background-color: yellow;
+    background-color: black;
     display: flex;
     flex-wrap: wrap;
 
@@ -26,12 +26,13 @@ body{
 #flexBox div, #foresee-box div{
     height: 20px;
     width: 20px;
+    border: 2px solid white
 
 }
 
 
 .piece{
-background-color: blue;
+border: 1px solid white ;
 
 }
 
